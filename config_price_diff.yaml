@@ -1,8 +1,8 @@
-# XGBoost 回归任务配置示例
+# XGBoost Price Diff 预测任务配置
 
 data:
-  # 数据类型: realtime, ahead, price_diff
-  data_type: 'realtime'
+  # 数据类型: price_diff
+  data_type: 'price_diff'
   
   # 数据基础目录
   base_dir: 'data1year/data'
@@ -56,7 +56,7 @@ hyperparameters:
     colsample_bytree: [0.6, 0.8, 1.0]
 
 output:
-  dir_prefix: 'output-regression'
+  dir_prefix: 'output-price-diff'
   model_json: 'xgb_best_model.json'
   model_pickle: 'xgb_best_model.pkl'
   save_feature_importance: true

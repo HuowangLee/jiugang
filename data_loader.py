@@ -2,6 +2,8 @@
 数据加载模块
 负责数据的读取、合并和预处理
 """
+import os
+import glob
 import pandas as pd
 from typing import List, Tuple
 from utils import safe_read_csv, quick_check_columns
@@ -19,6 +21,65 @@ class DataLoader:
         """
         self.config = config_manager
         self.data_config = config_manager.get_data_config()
+        self.data_type = self.data_config.get('data_type', 'realtime')
+        self.base_dir = self.data_config.get('base_dir', 'data1year/data')
+        
+        # 自动查找数据目录
+        self.data_dir = self._find_data_directory()
+    
+    def _find_data_directory(self) -> str:
+        """
+        根据data_type自动查找数据目录
+        
+        Returns:
+            数据目录路径
+        
+        Raises:
+            FileNotFoundError: 如果找不到匹配的数据目录
+        """
+        # 如果base_dir不存在，尝试使用旧的配置方式
+        if not os.path.exists(self.base_dir):
+            print(f'警告: 基础目录不存在 {self.base_dir}，尝试使用传统路径配置')
+            return None
+        
+        # 查找匹配data_type的目录
+        pattern = os.path.join(self.base_dir, f'{self.data_type}-*')
+        matching_dirs = glob.glob(pattern)
+        
+        if not matching_dirs:
+            raise FileNotFoundError(
+                f'未找到匹配的数据目录: {pattern}\n'
+                f'请确保 {self.base_dir} 下存在 {self.data_type}-* 格式的子目录'
+            )
+        
+        # 如果有多个匹配，选择最新的（按名称排序，通常包含日期）
+        data_dir = sorted(matching_dirs)[-1]
+        print(f'数据类型: {self.data_type}')
+        print(f'数据目录: {data_dir}')
+        
+        return data_dir
+    
+    def _build_file_path(self, file_key: str) -> str:
+        """
+        构建完整的文件路径
+        
+        Args:
+            file_key: 文件配置键名（如 'feat_train', 'label_train'）
+        
+        Returns:
+            完整的文件路径
+        """
+        filename = self.data_config.get(file_key)
+        
+        # 如果data_dir存在（新配置方式），使用它
+        if self.data_dir:
+            return os.path.join(self.data_dir, filename)
+        
+        # 否则使用旧的配置方式（向后兼容）
+        if file_key in self.data_config:
+            return self.data_config[file_key]
+        
+        raise ValueError(f'未找到文件配置: {file_key}')
     
     def load_train_data(self) -> pd.DataFrame:
         """
@@ -28,10 +89,9 @@ class DataLoader:
             训练DataFrame
         """
         print('加载训练数据...')
-        return self._read_and_merge(
-            self.data_config['feat_train'],
-            self.data_config['label_train']
-        )
+        feat_path = self._build_file_path('feat_train')
+        label_path = self._build_file_path('label_train')
+        return self._read_and_merge(feat_path, label_path)
     
     def load_test_data(self) -> pd.DataFrame:
         """
@@ -41,10 +101,9 @@ class DataLoader:
             测试DataFrame
         """
         print('加载测试数据...')
-        return self._read_and_merge(
-            self.data_config['feat_test'],
-            self.data_config['label_test']
-        )
+        feat_path = self._build_file_path('feat_test')
+        label_path = self._build_file_path('label_test')
+        return self._read_and_merge(feat_path, label_path)
     
     def _read_and_merge(self, feat_path: str, lab_path: str) -> pd.DataFrame:
         """

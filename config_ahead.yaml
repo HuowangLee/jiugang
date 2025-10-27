@@ -1,8 +1,8 @@
-# XGBoost 回归任务配置示例
+# XGBoost Ahead 预测任务配置
 
 data:
-  # 数据类型: realtime, ahead, price_diff
-  data_type: 'realtime'
+  # 数据类型: ahead
+  data_type: 'ahead'
   
   # 数据基础目录
   base_dir: 'data1year/data'
@@ -14,7 +14,7 @@ data:
   label_test: 'test_df_lab.csv'
 
 model:
-  mode: 'regression'
+  mode: 'classification'  # 'regression' 或 'classification'
   random_seed: 42
   n_random_trials: 100
   early_stopping_rounds: 30
@@ -56,7 +56,7 @@ hyperparameters:
     colsample_bytree: [0.6, 0.8, 1.0]
 
 output:
-  dir_prefix: 'output-regression'
+  dir_prefix: 'output-ahead'
   model_json: 'xgb_best_model.json'
   model_pickle: 'xgb_best_model.pkl'
   save_feature_importance: true

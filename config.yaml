@@ -2,10 +2,22 @@
 
 # 数据路径配置
 data:
-  feat_train: 'data_realtime/data_features_train.csv'
-  label_train: 'data_realtime/data_label_train.csv'
-  feat_test: 'data_realtime/test_df_feat.csv'
-  label_test: 'data_realtime/test_df_lab.csv'
+  # 数据类型: realtime, ahead, price_diff
+  data_type: 'realtime'
+  
+  # 数据基础目录
+  base_dir: 'data1year/data'
+  
+  # 数据子目录格式（自动根据data_type和日期范围查找）
+  # realtime: realtime-2024-08-31-2025-10-25
+  # ahead: ahead-2024-09-01-2025-10-26
+  # price_diff: price_diff-2024-08-31-2025-10-25
+  
+  # 文件名配置（保持不变）
+  feat_train: 'data_features_train.csv'
+  label_train: 'data_label_train.csv'
+  feat_test: 'test_df_feat.csv'
+  label_test: 'test_df_lab.csv'
 
 # 模型配置
 model:
