@@ -1,0 +1,68 @@
+# XGBoost Price Diff 分类任务配置
+
+data:
+  # 数据类型: price_diff
+  data_type: 'price_diff'
+  
+  # 数据基础目录
+  base_dir: 'data1year/data'
+  
+  # 文件名配置（保持不变）
+  feat_train: 'data_features_train.csv'
+  label_train: 'data_label_train.csv'
+  feat_test: 'test_df_feat.csv'
+  label_test: 'test_df_lab.csv'
+
+model:
+  mode: 'classification'  # 'regression' 或 'classification'
+  random_seed: 42
+  n_random_trials: 100
+  early_stopping_rounds: 30
+  num_boost_round: 1000
+  verbose_xgb: 50
+  validation_ratio: 0.10
+
+feature_engineering:
+  lag_length: 0
+  group_key: null
+  lag_method: 'direct'  # 'direct' (直接拼接) 或 'statistical' (统计量构造)
+  reserved_columns:
+    - 'info_date'
+    - 'info_hour'
+    - 'price_diff'
+    - 'jingjiakongjian_shift_1'
+    - 'price_ahead_clear_shift_1'
+    - 'sdsurplus_ahead_publish'
+
+sample_weight:
+  enabled: true  # 是否启用样本权重
+  weight_type: 'linear'  # 权重类型: 'linear' 或 'nonlinear'
+  eps: 1.0e-6  # 避免零的小常数
+  alpha: 2  # 非线性权重指数（仅在weight_type='nonlinear'时使用）
+
+hyperparameters:
+  regression:
+    n_estimators: [500, 1000, 1500, 2000]
+    max_depth: [3, 4, 6, 8]
+    learning_rate: [0.01, 0.02, 0.05, 0.1]
+    subsample: [0.6, 0.8, 1.0]
+    colsample_bytree: [0.6, 0.8, 1.0]
+    gamma: [0, 0.1, 0.5]
+  
+  classification:
+    n_estimators: [100, 200, 300, 500]
+    max_depth: [3, 4, 6]
+    learning_rate: [0.01, 0.02, 0.05, 0.1]
+    subsample: [0.6, 0.8, 1.0]
+    colsample_bytree: [0.6, 0.8, 1.0]
+
+output:
+  dir_prefix: 'output-price-diff-classification'
+  model_json: 'xgb_best_model.json'
+  model_pickle: 'xgb_best_model.pkl'
+  save_feature_importance: true
+  visualization:
+    figure_size: [10, 6]
+    dpi: 100
+    style: 'whitegrid'
+

@@ -15,11 +15,11 @@ import random
 import argparse
 import numpy as np
 
-from config_manager import ConfigManager
-from data_loader import DataLoader
-from feature_engineering import FeatureEngineer
-from model_trainer import ModelTrainer
-from evaluator import ModelEvaluator
+from src.config_manager import ConfigManager
+from src.data_loader import DataLoader
+from src.feature_engineering import FeatureEngineer
+from src.model_trainer import ModelTrainer
+from src.evaluator import ModelEvaluator
 
 
 def set_random_seed(seed: int):
@@ -106,8 +106,8 @@ def main(config_path: str = 'config_regression.yaml'):
     # 超参数搜索（带权重）
     trainer.hyperparameter_search(X_train, y_train, feat_cols, sample_weights)
     
-    # 训练最终模型（带权重）
-    trainer.train_final_model(X_train, y_train, sample_weights)
+    # 训练最终模型（带权重和特征名称）
+    trainer.train_final_model(X_train, y_train, sample_weights, feat_cols)
     
     # 获取最佳模型和参数
     best_model = trainer.get_best_model()

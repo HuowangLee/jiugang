@@ -1,0 +1,12 @@
+{
+  "params": {
+    "subsample": 0.6,
+    "n_estimators": 1500,
+    "max_depth": 6,
+    "learning_rate": 0.01,
+    "gamma": 0.5,
+    "colsample_bytree": 0.8
+  },
+  "num_rounds": 576,
+  "score": -72.29401060906667
+}

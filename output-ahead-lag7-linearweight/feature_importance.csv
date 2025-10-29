@@ -1,0 +1,17 @@
+feature_name,importance_gain
+sdsurplus,292148128.0
+sdsurplus_lag1,128326680.0
+jingjiakongjian,92728208.0
+jingjiakongjian_lag1,47867748.0
+jingjiakongjian_lag2,37501844.0
+sdsurplus_lag2,28625668.0
+jingjiakongjian_lag7,20165334.0
+sdsurplus_lag7,18198198.0
+jingjiakongjian_lag3,15889763.0
+sdsurplus_lag6,15804384.0
+jingjiakongjian_lag6,15777861.0
+sdsurplus_lag5,14683786.0
+jingjiakongjian_lag4,14529500.0
+jingjiakongjian_lag5,14393911.0
+sdsurplus_lag3,14224013.0
+sdsurplus_lag4,12649767.0

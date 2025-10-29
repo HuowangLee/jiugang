@@ -1,0 +1,15 @@
+feature_name,importance_gain
+jingjiakongjian,22674068.0
+jingjiakongjian_lag1,21275808.0
+sdsurplus,19336534.0
+sdsurplus_lag1,16422919.0
+jingjiakongjian_rolling_mean,5322685.5
+jingjiakongjian_diff3,2369462.5
+sdsurplus_rolling_mean,943942.9375
+sdsurplus_diff3,692429.625
+sdsurplus_diff1,544715.375
+sdsurplus_rolling_std,235615.390625
+jingjiakongjian_rolling_std,205315.8125
+sdsurplus_lag3,182770.421875
+jingjiakongjian_lag3,161569.96875
+jingjiakongjian_diff1,148769.734375

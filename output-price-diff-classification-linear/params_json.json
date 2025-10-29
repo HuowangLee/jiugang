@@ -1,0 +1,16 @@
+{
+  "mode": "classification",
+  "random_seed": 42,
+  "lag_length": 0,
+  "validation_ratio": 0.1,
+  "n_random_trials": 100,
+  "params": {
+    "subsample": 0.8,
+    "n_estimators": 300,
+    "max_depth": 4,
+    "learning_rate": 0.02,
+    "colsample_bytree": 0.6
+  },
+  "num_rounds": 232,
+  "score": 0.5679976851851852
+}

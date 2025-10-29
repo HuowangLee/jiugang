@@ -1,0 +1,17 @@
+{
+  "mode": "regression",
+  "random_seed": 42,
+  "lag_length": 7,
+  "validation_ratio": 0.1,
+  "n_random_trials": 100,
+  "params": {
+    "subsample": 0.6,
+    "n_estimators": 2000,
+    "max_depth": 8,
+    "learning_rate": 0.02,
+    "gamma": 0.1,
+    "colsample_bytree": 0.8
+  },
+  "num_rounds": 404,
+  "score": -68.46485110907484
+}
