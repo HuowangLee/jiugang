@@ -93,7 +93,7 @@ class ModelTrainer:
         X: np.ndarray,
         y: np.ndarray,
         feature_names: list,
-        apply_weight: bool = True
+        weights: np.ndarray = None
     ) -> xgb.DMatrix:
         """
         创建XGBoost DMatrix
@@ -102,15 +102,12 @@ class ModelTrainer:
             X: 特征
             y: 标签
             feature_names: 特征名
-            apply_weight: 是否应用样本权重
+            weights: 样本权重数组，如果为None则不使用权重
         
         Returns:
             DMatrix对象
         """
-        if apply_weight and self.weight_config.get('enabled', False):
-            eps = self.weight_config.get('eps', 1e-6)
-            alpha = self.weight_config.get('alpha', 2)
-            weights = calculate_sample_weights(y, eps, alpha)
+        if weights is not None:
             return xgb.DMatrix(X, label=y, feature_names=feature_names, weight=weights)
         else:
             return xgb.DMatrix(X, label=y, feature_names=feature_names)
@@ -135,12 +132,14 @@ class ModelTrainer:
         if self.mode == 'regression':
             params.update({
                 "objective": "reg:squarederror",
+                "base_score": 0.5,  # 明确设置 base_score 避免冲突
                 "seed": self.random_seed,
             })
         else:  # classification
             params.update({
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
+                "base_score": 0.5,  # 对于 logistic，必须在 (0,1) 之间
                 "use_label_encoder": False,
                 "seed": self.random_seed,
             })
@@ -186,7 +185,8 @@ class ModelTrainer:
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
-        feature_names: list
+        feature_names: list,
+        sample_weights: np.ndarray = None
     ):
         """
         超参数搜索
@@ -195,6 +195,7 @@ class ModelTrainer:
             X_train: 训练特征
             y_train: 训练标签
             feature_names: 特征名列表
+            sample_weights: 样本权重（可选）
         """
         print(f'\n开始超参数搜索 (mode={self.mode}, n_trials={self.n_trials})...')
         
@@ -209,14 +210,24 @@ class ModelTrainer:
         # 拆分训练/验证
         X_tr, y_tr, X_val, y_val = self.split_train_validation(X_train, y_train)
         
+        # 拆分样本权重（如果有）
+        weights_tr = None
+        weights_val = None
+        if sample_weights is not None:
+            n_all = len(X_train)
+            split_idx = int(n_all * (1 - self.validation_ratio))
+            weights_tr = sample_weights[:split_idx]
+            weights_val = sample_weights[split_idx:]
+            print(f'样本权重已拆分: {len(weights_tr)}/{len(weights_val)}')
+        
         try:
             for i in trange(len(sampler), desc='超参数试验'):
                 trial_params = sampler[i].copy()
                 params = self.get_params_for_trial(trial_params)
                 
-                # 创建DMatrix
-                dtrain = self.create_dmatrix(X_tr, y_tr, feature_names)
-                dval = self.create_dmatrix(X_val, y_val, feature_names)
+                # 创建DMatrix（带权重）
+                dtrain = self.create_dmatrix(X_tr, y_tr, feature_names, weights_tr)
+                dval = self.create_dmatrix(X_val, y_val, feature_names, weights_val)
                 
                 # 训练模型
                 model = xgb.train(
@@ -260,7 +271,8 @@ class ModelTrainer:
     def train_final_model(
         self,
         X_train: np.ndarray,
-        y_train: np.ndarray
+        y_train: np.ndarray,
+        sample_weights: np.ndarray = None
     ):
         """
         使用最佳参数在全部训练集上训练最终模型
@@ -268,18 +280,24 @@ class ModelTrainer:
         Args:
             X_train: 训练特征
             y_train: 训练标签
+            sample_weights: 样本权重（可选）
         """
         print('\n使用最佳参数训练最终模型...')
         
         if self.best_params is None:
             raise ValueError('请先运行超参数搜索')
         
+        # 复制最佳参数并移除n_estimators（避免重复参数）
+        final_params = self.best_params.copy()
+        if 'n_estimators' in final_params:
+            final_params.pop('n_estimators')
+        
         if self.mode == 'regression':
             self.best_model = xgb.XGBRegressor(
                 verbosity=0,
                 random_state=self.random_seed,
-                **self.best_params,
-                n_estimators=self.best_num_rounds
+                n_estimators=self.best_num_rounds,
+                **final_params
             )
         else:  # classification
             self.best_model = xgb.XGBClassifier(
@@ -287,11 +305,11 @@ class ModelTrainer:
                 eval_metric='logloss',
                 verbosity=0,
                 random_state=self.random_seed,
-                **self.best_params,
-                n_estimators=self.best_num_rounds
+                n_estimators=self.best_num_rounds,
+                **final_params
             )
         
-        self.best_model.fit(X_train, y_train)
+        self.best_model.fit(X_train, y_train, sample_weight=sample_weights)
         print('最终模型训练完成!')
     
     def get_best_model(self):

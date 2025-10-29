@@ -42,17 +42,15 @@ feature_engineering:
   reserved_columns:
     - 'info_date'
     - 'info_hour'
-    - 'info_date_dt'
-    - '_timestamp'
-    - '_time_delta'
     - 'price_diff'
     - 'jingjiakongjian_shift_1'
 
 # 样本权重配置
 sample_weight:
-  enabled: true
-  eps: 1.0e-6
-  alpha: 2  # 非线性权重指数
+  enabled: true  # 是否启用样本权重
+  weight_type: 'nonlinear'  # 权重类型: 'linear' 或 'nonlinear'
+  eps: 1.0e-6  # 避免零的小常数
+  alpha: 2  # 非线性权重指数（仅在weight_type='nonlinear'时使用）
 
 # 超参数搜索空间
 hyperparameters:

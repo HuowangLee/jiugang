@@ -96,17 +96,34 @@ def per_date_sign_agreement(df: pd.DataFrame, date_col: str = 'info_date') -> pd
     return pd.DataFrame(rows).sort_values('info_date')
 
 
-def calculate_sample_weights(y: np.ndarray, eps: float = 1e-6, alpha: float = 2) -> np.ndarray:
+def calculate_sample_weights(
+    y: np.ndarray, 
+    weight_type: str = 'nonlinear',
+    eps: float = 1e-6, 
+    alpha: float = 2
+) -> np.ndarray:
     """
-    计算样本权重（非线性加权）
+    根据标签绝对值计算样本权重
     
     Args:
-        y: 标签数组
+        y: 标签数组（例如price_diff）
+        weight_type: 权重类型，'linear'或'nonlinear'
         eps: 避免零的小常数
-        alpha: 权重指数
+        alpha: 非线性权重指数（仅在weight_type='nonlinear'时使用）
     
     Returns:
         样本权重数组
     """
-    return np.power(np.abs(y) + eps, alpha)
+    abs_y = np.abs(y) + eps
+    
+    if weight_type == 'linear':
+        # 线性权重：权重 = |y| + eps
+        weights = abs_y
+    elif weight_type == 'nonlinear':
+        # 非线性权重：权重 = (|y| + eps) ^ alpha
+        weights = np.power(abs_y, alpha)
+    else:
+        raise ValueError(f"不支持的权重类型: {weight_type}，支持的类型: 'linear', 'nonlinear'")
+    
+    return weights
 

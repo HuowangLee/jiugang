@@ -8,6 +8,8 @@ import csv
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # 设置为非交互模式，不显示图片窗口
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
@@ -116,20 +118,75 @@ class ModelEvaluator:
         # 回归模式额外指标
         if self.mode == 'regression':
             from sklearn.metrics import mean_squared_error, mean_absolute_error
+            
+            # 分日期统计回归指标
+            per_date_metrics = self._calculate_per_date_regression_metrics(res_df)
+            print('\n按日期的回归指标:')
+            print(per_date_metrics.to_string(index=False))
+            
+            # 整体指标
             mse = mean_squared_error(res_df['label'], res_df['pred'])
             mae = mean_absolute_error(res_df['label'], res_df['pred'])
             rmse = np.sqrt(mse)
             
+            # 计算 acc 指标: 1 - (sum(abs(真实值-预测值)) / sum(真实值))
+            sum_true = res_df['label'].sum()
+            if sum_true != 0:
+                acc = 1 - (np.abs(res_df['label'] - res_df['pred']).sum() / sum_true)
+            else:
+                acc = 0.0
+            
             metrics.update({
                 'rmse': float(rmse),
                 'mae': float(mae),
-                'mse': float(mse)
+                'mse': float(mse),
+                'acc': float(acc),
+                'per_date_regression_metrics': per_date_metrics
             })
             
+            print(f'\n整体指标:')
             print(f'RMSE: {rmse:.4f}')
             print(f'MAE: {mae:.4f}')
+            print(f'ACC: {acc:.4f}')
         
         return metrics
+    
+    def _calculate_per_date_regression_metrics(self, res_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        按日期计算回归指标
+        
+        Args:
+            res_df: 预测结果DataFrame
+        
+        Returns:
+            每日回归指标DataFrame
+        """
+        from sklearn.metrics import mean_squared_error, mean_absolute_error
+        
+        per_date_list = []
+        for date in sorted(res_df['info_date'].unique()):
+            date_df = res_df[res_df['info_date'] == date]
+            
+            mse = mean_squared_error(date_df['label'], date_df['pred'])
+            rmse = np.sqrt(mse)
+            mae = mean_absolute_error(date_df['label'], date_df['pred'])
+            
+            # 计算该日期的 acc
+            sum_true = date_df['label'].sum()
+            if sum_true != 0:
+                acc = 1 - (np.abs(date_df['label'] - date_df['pred']).sum() / sum_true)
+            else:
+                acc = 0.0
+            
+            per_date_list.append({
+                'info_date': date,
+                'count': len(date_df),
+                'rmse': rmse,
+                'mae': mae,
+                'acc': acc
+            })
+        
+        return pd.DataFrame(per_date_list)
     
     def save_results(
         self,
@@ -172,8 +229,15 @@ class ModelEvaluator:
         metrics['per_date_agreement'].to_csv(per_date_csv, index=False)
         print(f"按日期一致性: {per_date_csv}")
         
+        # 3.5 如果是回归模式，保存按日期的回归指标
+        if self.mode == 'regression' and 'per_date_regression_metrics' in metrics:
+            per_date_reg_csv = os.path.join(self.output_dir, "per_date_regression_metrics.csv")
+            metrics['per_date_regression_metrics'].to_csv(per_date_reg_csv, index=False)
+            print(f"按日期回归指标: {per_date_reg_csv}")
+        
         # 4. 保存评估摘要
-        eval_summary = {k: v for k, v in metrics.items() if k != 'per_date_agreement'}
+        eval_summary = {k: v for k, v in metrics.items() 
+                       if k not in ['per_date_agreement', 'per_date_regression_metrics']}
         eval_summary_json = os.path.join(self.output_dir, "eval_summary.json")
         with open(eval_summary_json, 'w', encoding='utf-8') as f:
             json.dump(eval_summary, f, ensure_ascii=False, indent=2)
@@ -256,24 +320,49 @@ class ModelEvaluator:
     
     def _plot_regression(self, res_df: pd.DataFrame, fig_size: list):
         """绘制回归结果对比图"""
+        # 1. 绘制整体对比图
         plt.figure(figsize=tuple(fig_size))
         
-        res_df = res_df.reset_index(drop=True)
-        res_df['idx'] = res_df.index
+        res_df_plot = res_df.reset_index(drop=True)
+        res_df_plot['idx'] = res_df_plot.index
         
-        plt.plot(res_df['idx'], res_df['label'], label='真实值', alpha=0.7)
-        plt.plot(res_df['idx'], res_df['pred'], label='预测值', alpha=0.7)
+        plt.plot(res_df_plot['idx'], res_df_plot['label'], label='True Value', alpha=0.7)
+        plt.plot(res_df_plot['idx'], res_df_plot['pred'], label='Predicted Value', alpha=0.7)
         
-        plt.xlabel("样本序号")
-        plt.ylabel("值")
-        plt.title("真实值 vs 预测值")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Value")
+        plt.title("True Value vs Predicted Value")
         plt.legend()
         plt.tight_layout()
         
         fig_file = os.path.join(self.output_dir, "label_pred_line.png")
         plt.savefig(fig_file, dpi=self.viz_config.get('dpi', 100))
-        print(f"对比图: {fig_file}")
+        print(f"Overall comparison plot: {fig_file}")
         plt.close()
+        
+        # 2. 绘制分日期对比图
+        dates = sorted(res_df['info_date'].unique())
+        
+        for date in dates:
+            date_df = res_df[res_df['info_date'] == date].reset_index(drop=True)
+            date_df['idx'] = date_df.index
+            
+            plt.figure(figsize=tuple(fig_size))
+            plt.plot(date_df['idx'], date_df['label'], label='True Value', alpha=0.7, marker='o')
+            plt.plot(date_df['idx'], date_df['pred'], label='Predicted Value', alpha=0.7, marker='x')
+            
+            plt.xlabel("Sample Index")
+            plt.ylabel("Value")
+            plt.title(f"True vs Predicted Value - Date: {date}")
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            date_fig_file = os.path.join(self.output_dir, f"label_pred_{date}.png")
+            plt.savefig(date_fig_file, dpi=self.viz_config.get('dpi', 100))
+            plt.close()
+        
+        print(f"Per-date comparison plots: {len(dates)} plots saved")
     
     def _plot_classification(self, per_date: pd.DataFrame, fig_size: list):
         """绘制分类结果（按日期一致性柱状图）"""
@@ -281,13 +370,13 @@ class ModelEvaluator:
         
         sns.barplot(data=per_date, x='info_date', y='agreement')
         plt.xticks(rotation=45, ha='right')
-        plt.xlabel("日期")
-        plt.ylabel("正负一致性")
-        plt.title("按日期的正负一致性")
+        plt.xlabel("Date")
+        plt.ylabel("Sign Agreement")
+        plt.title("Sign Agreement by Date")
         plt.tight_layout()
         
         fig_file = os.path.join(self.output_dir, "agreement_by_date_bar.png")
         plt.savefig(fig_file, dpi=self.viz_config.get('dpi', 100))
-        print(f"一致性图: {fig_file}")
+        print(f"Agreement plot: {fig_file}")
         plt.close()
 

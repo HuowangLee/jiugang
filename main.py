@@ -29,7 +29,7 @@ def set_random_seed(seed: int):
     print(f'随机种子设置为: {seed}')
 
 
-def main(config_path: str = 'config.yaml'):
+def main(config_path: str = 'config_regression.yaml'):
     """
     主训练流程
     
@@ -68,18 +68,33 @@ def main(config_path: str = 'config.yaml'):
         feat_cols,
         DataLoader.make_datetime_index
     )
+
+    # 这里输出训练集和测试集的时间范围
+    if 'info_date' in train_df.columns and 'info_date' in test_df.columns:
+        train_dates = train_df['info_date']
+        test_dates_range = test_df['info_date']
+        print('\n[信息] 训练集(info_date)范围: {} ~ {}'.format(train_dates.min(), train_dates.max()))
+        print('[信息] 测试集(info_date)范围: {} ~ {}'.format(test_dates_range.min(), test_dates_range.max()))
+    else:
+        print('\n[警告] 数据中未找到info_date字段，无法输出时间范围')
     
     # 准备训练数据
     print('\n准备训练和测试数据...')
     X_train = train_df[feat_cols].values
-    y_train = train_df['price_diff'].values
     X_test = test_df[feat_cols].values
-    y_test = test_df['price_diff'].values
     test_dates = test_df['info_date']
+
+    # 使用data_loader中的label_column属性
+    label_column = data_loader.label_column
+    y_train = train_df[label_column].values
+    y_test = test_df[label_column].values
     
     print(f'训练样本数: {len(X_train)}')
     print(f'测试样本数: {len(X_test)}')
     print(f'特征数量: {len(feat_cols)}')
+    
+    # 计算样本权重（基于price_diff）
+    sample_weights = feature_engineer.compute_sample_weights(train_df)
     
     # 4. 模型训练
     print('\n[4/7] 模型训练...')
@@ -88,11 +103,11 @@ def main(config_path: str = 'config.yaml'):
     # 准备数据（分类任务会转换标签）
     X_train, y_train, feat_cols = trainer.prepare_data(X_train, y_train, feat_cols)
     
-    # 超参数搜索
-    trainer.hyperparameter_search(X_train, y_train, feat_cols)
+    # 超参数搜索（带权重）
+    trainer.hyperparameter_search(X_train, y_train, feat_cols, sample_weights)
     
-    # 训练最终模型
-    trainer.train_final_model(X_train, y_train)
+    # 训练最终模型（带权重）
+    trainer.train_final_model(X_train, y_train, sample_weights)
     
     # 获取最佳模型和参数
     best_model = trainer.get_best_model()

@@ -2,7 +2,7 @@
 
 data:
   # 数据类型: realtime, ahead, price_diff
-  data_type: 'realtime'
+  data_type: 'ahead'
   
   # 数据基础目录
   base_dir: 'data1year/data'
@@ -16,7 +16,7 @@ data:
 model:
   mode: 'regression'
   random_seed: 42
-  n_random_trials: 100
+  n_random_trials: 10
   early_stopping_rounds: 30
   num_boost_round: 1000
   verbose_xgb: 50
@@ -28,16 +28,16 @@ feature_engineering:
   reserved_columns:
     - 'info_date'
     - 'info_hour'
-    - 'info_date_dt'
-    - '_timestamp'
-    - '_time_delta'
     - 'price_diff'
     - 'jingjiakongjian_shift_1'
+    - 'price_ahead_clear_shift_1'
+    - 'price_real_clear_shift_1'
 
 sample_weight:
-  enabled: true
-  eps: 1.0e-6
-  alpha: 2
+  enabled: true  # 是否启用样本权重
+  weight_type: 'nonlinear'  # 权重类型: 'linear' 或 'nonlinear'
+  eps: 1.0e-6  # 避免零的小常数
+  alpha: 2  # 非线性权重指数（仅在weight_type='nonlinear'时使用）
 
 hyperparameters:
   regression:

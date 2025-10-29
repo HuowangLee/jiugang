@@ -3,7 +3,9 @@
 负责特征的构建和转换
 """
 import pandas as pd
-from typing import List, Optional
+import numpy as np
+from typing import List, Optional, Tuple
+from utils import calculate_sample_weights
 
 
 class FeatureEngineer:
@@ -18,6 +20,7 @@ class FeatureEngineer:
         """
         self.config = config_manager
         self.feature_config = config_manager.get_feature_config()
+        self.weight_config = config_manager.get_sample_weight_config()
         self.lag_length = self.feature_config.get('lag_length', 0)
         self.group_key = self.feature_config.get('group_key', None)
     
@@ -131,10 +134,84 @@ class FeatureEngineer:
         
         # 移除滞后造成的NA
         train_lagged = self.remove_lag_na(train_lagged, '训练集')
+        test_lagged = self.remove_lag_na(test_lagged, '测试集')
         
         # 更新特征列（包含新生成的滞后特征）
         reserved = set(self.feature_config.get('reserved_columns', []))
-        updated_feat_cols = [c for c in train_lagged.columns if c not in reserved]
         
+
+        # 移除所有后缀含有新疆、宁夏、青海、陕西但不是load_ahead_publish_XXX的列，并输出移除的列名
+        import re
+        regions = ['新疆', '宁夏', '青海', '陕西']
+        removed_cols = []
+
+        def should_remove(col_name):
+            # 匹配后缀为区域名
+            for region in regions:
+                pattern = rf'{region}$'
+                if re.search(pattern, col_name):
+                    # 允许load_ahead_publish_XXX格式
+                    if col_name == f'load_ahead_publish_{region}':
+                        return False
+                    else:
+                        return True
+            return False
+
+        # 找到需要移除的列
+        train_remove = [c for c in train_lagged.columns if should_remove(c)]
+        test_remove = [c for c in test_lagged.columns if should_remove(c)]
+        # 并集以展示所有被移除的列
+        remove_cols = list(set(train_remove + test_remove))
+        if remove_cols:
+            print(f'移除以下含有区域后缀的列（除load_ahead_publish_XXX）：{remove_cols}')
+
+        train_lagged = train_lagged.drop(columns=remove_cols, errors='ignore')
+        test_lagged = test_lagged.drop(columns=remove_cols, errors='ignore')
+
+        # 移除全部为nan的列，并输出移除的列名
+        all_nan_cols = [col for col in train_lagged.columns if train_lagged[col].isna().all() and test_lagged[col].isna().all()]
+        if all_nan_cols:
+            print(f'移除全部为nan的列: {all_nan_cols}')
+            train_lagged = train_lagged.drop(columns=all_nan_cols)
+            test_lagged = test_lagged.drop(columns=all_nan_cols)
+
+        
+        
+        updated_feat_cols = [c for c in train_lagged.columns if c not in reserved]
+        print(f'保留的特征列: {updated_feat_cols}')
+
         return train_lagged, test_lagged, updated_feat_cols
+    
+    def compute_sample_weights(self, df: pd.DataFrame) -> Optional[np.ndarray]:
+        """
+        根据price_diff计算样本权重
+        
+        Args:
+            df: 包含price_diff列的DataFrame
+        
+        Returns:
+            样本权重数组，如果未启用则返回None
+        """
+        if not self.weight_config.get('enabled', False):
+            return None
+        
+        if 'price_diff' not in df.columns:
+            print('警告: 未找到price_diff列，无法计算样本权重')
+            return None
+        
+        weight_type = self.weight_config.get('weight_type', 'nonlinear')
+        eps = self.weight_config.get('eps', 1e-6)
+        alpha = self.weight_config.get('alpha', 2)
+        
+        price_diff = df['price_diff'].values
+        weights = calculate_sample_weights(price_diff, weight_type, eps, alpha)
+        
+        print(f'\n样本权重计算:')
+        print(f'  权重类型: {weight_type}')
+        print(f'  eps: {eps}')
+        if weight_type == 'nonlinear':
+            print(f'  alpha: {alpha}')
+        print(f'  权重统计: min={weights.min():.4f}, max={weights.max():.4f}, mean={weights.mean():.4f}')
+        
+        return weights
 
