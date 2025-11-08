@@ -219,7 +219,7 @@ class FeatureEngineer:
 
         # 只保留指定的几列
         # keep_cols = ['jingjiakongjian', 'sdsurplus',
-        # # 'load_ahead_publish_新疆', 'load_ahead_publish_宁夏', 'load_ahead_publish_青海', 'load_ahead_publish_陕西',
+        # 'load_ahead_publish_新疆', 'load_ahead_publish_宁夏', 'load_ahead_publish_青海', 'load_ahead_publish_陕西',
         #  'price_ahead_clear', 'price_real_clear','price_diff', 'info_date', 'info_hour']
         # # 只保留存在于concat_df中的那些
         # keep_cols = [c for c in keep_cols if c in train_df.columns and c in test_df.columns]
@@ -280,10 +280,30 @@ class FeatureEngineer:
         # 此时feature_cols中也需做同步更名
         feature_cols = [rename_cols.get(fc, fc) for fc in feature_cols]
 
-            
+        
         
         # 更新特征列，移除已删除的列
         feature_cols = [c for c in feature_cols if c in concat_df.columns]
+
+        # 计算火电占比: huodianzhanbi = huodian_kaiji / (huodian_kaiji + ne_ahead_publish)
+        if 'huodian_kaiji' in concat_df.columns and 'ne_ahead_publish' in concat_df.columns:
+            huodian_kaiji = concat_df['huodian_kaiji'].astype(float)
+            ne_ahead_publish = concat_df['ne_ahead_publish'].astype(float)
+            denom = huodian_kaiji + ne_ahead_publish
+            # 为避免除零，分母为0的情况下结果设为nan
+            concat_df['huodianzhanbi'] = huodian_kaiji / denom.replace(0, np.nan)
+            feature_cols.append('huodianzhanbi')
+        else:
+            print('警告: 缺少huodiankaiji或ne_ahead_publish列, 无法计算huodianzhanbi')
+
+        # 计算火电负荷率: huodianfuhelv = huodian_kaiji / 29745
+        if 'huodian_kaiji' in concat_df.columns:
+            concat_df['huodianfuhelv'] = concat_df['huodian_kaiji'].astype(float) / 29745
+            feature_cols.append('huodianfuhelv')
+        else:
+            print('警告: 缺少huodiankaiji列, 无法计算huodianfuhelv')
+        
+
         
         # 生成滞后特征
         concat_lagged = self.build_lag_features(concat_df, feature_cols)

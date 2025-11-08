@@ -1,0 +1,17 @@
+feature_name,importance_gain
+jingjiakongjian,79.27996063232422
+sdsurplus,33.618499755859375
+jingjiakongjian_lag7,32.68505859375
+jingjiakongjian_lag6,23.184078216552734
+sdsurplus_lag7,21.973735809326172
+sdsurplus_lag3,19.9528865814209
+sdsurplus_lag4,18.91075897216797
+jingjiakongjian_lag5,14.117408752441406
+sdsurplus_lag1,13.930742263793945
+jingjiakongjian_lag3,13.559346199035645
+sdsurplus_lag2,13.342726707458496
+jingjiakongjian_lag1,12.240533828735352
+jingjiakongjian_lag2,11.986427307128906
+jingjiakongjian_lag4,11.669526100158691
+sdsurplus_lag5,11.295808792114258
+sdsurplus_lag6,11.281047821044922

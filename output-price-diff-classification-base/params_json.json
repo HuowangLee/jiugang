@@ -5,12 +5,12 @@
   "validation_ratio": 0.1,
   "n_random_trials": 100,
   "params": {
-    "subsample": 0.6,
-    "n_estimators": 300,
-    "max_depth": 6,
-    "learning_rate": 0.05,
-    "colsample_bytree": 0.8
+    "subsample": 1.0,
+    "n_estimators": 500,
+    "max_depth": 3,
+    "learning_rate": 0.02,
+    "colsample_bytree": 1.0
   },
-  "num_rounds": 1,
-  "score": 0.49797453703703703
+  "num_rounds": 48,
+  "score": 0.5663493840985442
 }

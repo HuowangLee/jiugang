@@ -1,0 +1,16 @@
+﻿experiment_name,overall_info_date_agreement
+output-price-diff-classification-allfeat,0.671875
+output-price-diff-classification-allfeat&huodian,0.662847222
+output-price-diff-classification-allfeat&huodian-lag7,0.65421147
+output-price-diff-classification-allfeat&huodian-lag7-stat,0.65421147
+output-price-diff-classification-allfeat-lag3,0.666353047
+output-price-diff-classification-allfeat-lag3-stat,0.67702733
+output-price-diff-classification-allfeat-lag7,0.659983614
+output-price-diff-classification-allfeat-lag7-stat,0.652134051
+output-price-diff-classification-allfet&huodian-lag3,0.667394713
+output-price-diff-classification-allfet&huodian-lag3-stat,0.65421147
+output-price-diff-classification-base,0.621875
+output-price-diff-classification-base-lag3,0.613866487
+output-price-diff-classification-base-lag3-stat,0.595138889
+output-price-diff-classification-base-lag7,0.600097534
+output-price-diff-classification-base-lag7-stat,0.614251717

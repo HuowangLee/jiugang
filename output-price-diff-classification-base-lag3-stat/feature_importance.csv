@@ -1,0 +1,15 @@
+feature_name,importance_gain
+jingjiakongjian,67.75115966796875
+jingjiakongjian_lag1,46.72481155395508
+jingjiakongjian_diff3,44.04082489013672
+sdsurplus,42.45543670654297
+sdsurplus_lag1,31.661136627197266
+sdsurplus_diff3,30.099199295043945
+jingjiakongjian_diff1,20.580921173095703
+jingjiakongjian_rolling_mean,20.27337646484375
+sdsurplus_rolling_mean,19.00527000427246
+jingjiakongjian_lag3,16.753673553466797
+sdsurplus_lag3,16.491361618041992
+sdsurplus_rolling_std,14.013138771057129
+sdsurplus_diff1,12.66915225982666
+jingjiakongjian_rolling_std,9.886741638183594
